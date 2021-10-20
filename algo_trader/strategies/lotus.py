@@ -25,7 +25,7 @@ class Lotus:
         self._settings_path = os.path.abspath(os.path.join(os.path.dirname(
             os.path.abspath(__file__)), os.pardir, 'settings', setting_file_name))
 
-        self._last_signal_timestamp = datetime.datetime.utcnow()
+        self._last_signal_timestamp = self.get_api_signal()['timestamp']
 
         self._last_timestamp = {}
         self._last_entry = {}

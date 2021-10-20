@@ -9,7 +9,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="algo-trader",
-    version="1.9.5",
+    version="1.9.6",
     author="Niclas Hummel",
     author_email="info@numbernine.tech",
     description="Trade execution engine to process API data and transmit"
