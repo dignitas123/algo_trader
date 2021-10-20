@@ -247,7 +247,7 @@ class Lotus:
                         self.process_signals(signal)
                         break
                     count_s_tries += 1
-                    if count_s_tries > 15:
+                    if count_s_tries > 22:
                         print('No new signal.', flush=True)
                         break
                     time.sleep(self.rand_sec())
