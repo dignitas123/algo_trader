@@ -25,7 +25,7 @@ class Lotus:
         self._settings_path = os.path.abspath(os.path.join(os.path.dirname(
             os.path.abspath(__file__)), os.pardir, 'settings', setting_file_name))
 
-        self._last_signal_timestamp = self.get_api_signal()['timestamp']
+        self._last_signal_timestamp = self.get_api_signal_retry()['timestamp']
 
         self._last_timestamp = {}
         self._last_entry = {}
@@ -85,6 +85,14 @@ class Lotus:
         except requests.exceptions.RequestException as e:
             print('Another exception occured {}'.format(e))
             return False
+
+    def get_api_signal_retry(self):
+        while True:
+            signal = self.get_api_signal()
+            if signal:
+                return signal
+            else:
+                time.sleep(10)
 
     def is_new_signal(self, signal):
         # tests if signal has new timestamp
