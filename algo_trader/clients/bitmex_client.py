@@ -165,7 +165,7 @@ class BitmexOrder:
             self.props[symbol] = {
                 'stoploss_id': '', 'stop_id': '', 'entry': .0, 'SL': .0, 'TP': .0, 'open': False, 'wait_stop': False, 'qty': 0, 'initialSL': .0}
 
-        self.show_slippage = False  # only for testing
+        self.show_slippage = True  # only for testing
         if self.show_slippage:
             self.entry_acc_balance = {}
             self.between_profits = {}
@@ -225,9 +225,9 @@ class BitmexOrder:
         print("{} Position has been opened in {}, amending Stoploss to".format(dir, symbol),
               self.props[symbol]['SL'], flush=True)
         self.stoploss_order(symbol)
-        self.between_profits(symbol)
+        self.calculate_between_profits(symbol)
 
-    def between_profits(self, symbol):
+    def calculate_between_profits(self, symbol):
         between_profs = .0
         for sym in self._symbols:
             if symbol != sym:
@@ -258,7 +258,7 @@ class BitmexOrder:
 
             current_acc_balance = float(self.client.acc_balance)
 
-            between_profs = self.between_profits(symbol)
+            between_profs = self.calculate_between_profits(symbol)
 
             # exit account balance - current account balance
             acc_balance_diff = current_acc_balance - \
