@@ -165,7 +165,7 @@ class BitmexOrder:
             self.props[symbol] = {
                 'stoploss_id': '', 'stop_id': '', 'entry': .0, 'SL': .0, 'TP': .0, 'open': False, 'wait_stop': False, 'qty': 0, 'initialSL': .0}
 
-        self.show_slippage = True  # only for testing
+        self.show_slippage = False  # only for testing
         if self.show_slippage:
             self.entry_acc_balance = {}
             self.between_profits = {}
