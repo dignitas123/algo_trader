@@ -233,7 +233,7 @@ class Lotus:
             self.me_count += 1
             self.order.manage_entries(self.symbols, me_count=self.me_count)
             now = datetime.datetime.utcnow()
-            if now.minute % 30 == 0:
+            if now.minute % 60 == 0:
                 exec_minute = now.minute
                 time.sleep(19 + self.rand_sec(start=1, end=3))
                 count_s_tries = 0

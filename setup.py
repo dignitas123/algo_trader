@@ -9,9 +9,9 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="algo-trader",
-    version="2.0.2",
+    version="2.0.3",
     author="Niclas Hummel",
-    author_email="info@numbernine.tech",
+    author_email="info@algoinvest.online",
     description="Trade execution engine to process API data and transmit"
     " orders to Bitmex and other brokers.",
     long_description=open(join(here, 'README.md')).read(),
