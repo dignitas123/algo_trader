@@ -6,7 +6,7 @@ import uuid
 import pickle
 import sys
 
-from bravado.exception import HTTPBadGateway, HTTPUnauthorized, HTTPBadRequest, HTTPNotFound, HTTPGatewayTimeout, HTTPServiceUnavailable, HTTPTooManyRequests
+from bravado.exception import HTTPBadGateway, HTTPUnauthorized, HTTPBadRequest, HTTPNotFound, HTTPGatewayTimeout, HTTPServiceUnavailable, HTTPTooManyRequests, HTTPServerError
 
 
 class BitmexClient:
@@ -83,7 +83,7 @@ class BitmexClient:
                                                 ).result()[0][0]['price']
             self._last_currentprice[symbol] = price
             return price
-        except (IndexError, HTTPBadRequest, HTTPGatewayTimeout, HTTPBadGateway, HTTPServiceUnavailable) as e:
+        except (IndexError, HTTPBadRequest, HTTPGatewayTimeout, HTTPBadGateway, HTTPServiceUnavailable, HTTPServerError) as e:
             if 'expired' in str(e):
                 print('Current price expired. Returning last price.', flush=True)
             elif 'Service Unavailable' in str(e):
