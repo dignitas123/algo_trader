@@ -43,7 +43,7 @@ class BitmexClient:
                         symbol), flush=True)
                 else:
                     time.sleep(2)  # try again after 2 seconds
-                    print("Can't get position in {}. Trying again...".format(symbol), e)
+                    print("Can't get position in {}. Trying again... [Bitmex Server temporarily not reachable]".format(symbol))
                     i += 1
                     if i > 1:
                         print("Can't get position in {} for 2nd time.".format(symbol))
