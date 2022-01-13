@@ -162,7 +162,7 @@ if args.run in ['run', 'Run', 'RUN']:
 
     if args.strategy == 'lotus' and broker in ['bitmex_testnet', 'bitmex']:
         from algo_trader.strategies import Lotus
-        from algo_trader.clients import BitmexClient
+        from algo_trader.clients.bitmex import BitmexClient
 
         client = BitmexClient(api_key=start_settings.api_key,
                               api_secret=start_settings.api_secret, testnet=testnet)
@@ -171,7 +171,7 @@ if args.run in ['run', 'Run', 'RUN']:
         lotus.run()
 
     """
-    any custom made strategy has to be run with the -strategy <strategy name> argument.
+    Any custom made strategy has to be run with the -strategy <strategy name> argument.
     You have to create a new strategy class in /strategies folder to run it.
     """
 else:

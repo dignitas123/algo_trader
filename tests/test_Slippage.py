@@ -1,4 +1,4 @@
-from algo_trader.clients import BitmexClient
+from algo_trader.clients.bitmex import BitmexClient
 
 client = BitmexClient(api_key='',
                       api_secret='', testnet=False)

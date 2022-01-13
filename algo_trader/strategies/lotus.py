@@ -3,7 +3,7 @@ import random
 import datetime
 import time
 from dateutil import parser
-from algo_trader.clients import BitmexOrder
+from algo_trader.clients.bitmex import BitmexOrder
 import requests
 import os
 import signal
