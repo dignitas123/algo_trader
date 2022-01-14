@@ -4,6 +4,7 @@ import datetime
 import time
 from dateutil import parser
 from algo_trader.clients import BitmexOrder
+from algo_trader.settings import TESTNET_LOTUS_LINK, LIVE_LOTUS_LINK
 import requests
 import os
 import signal
@@ -16,12 +17,7 @@ class Lotus:
         self.client = client
         self.symbols = symbols
         self.settings = settings
-        if self.client.testnet:
-            from algo_trader.settings import TESTNET_LOTUS_LINK
-            self._api_endpoint = TESTNET_LOTUS_LINK
-        else:
-            from algo_trader.settings import LIVE_LOTUS_LINK
-            self._api_endpoint = LIVE_LOTUS_LINK
+        self._api_endpoint = TESTNET_LOTUS_LINK if self.client.testnet else LIVE_LOTUS_LINK
         self._settings_path = os.path.abspath(os.path.join(os.path.dirname(
             os.path.abspath(__file__)), os.pardir, 'settings', setting_file_name))
 
@@ -41,8 +37,7 @@ class Lotus:
             self._last_sl[symbol] = ''
 
         if not self.client.is_connected:
-            print(
-                "Invalid API ID or API Secret, please restart and provide the right keys", flush=True)
+            print("Invalid API ID or API Secret, please restart and provide the right keys", flush=True)
             sys.exit()
 
     # helper function
