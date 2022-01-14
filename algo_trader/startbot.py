@@ -114,65 +114,65 @@ def position_symbol_sizes(symbols):
             key, symbols[key]['position_size'])
     return output
 
+def app():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        'run', help='You have to say algotrader to \'run\' on symbol(s) and a broker to trade on.')
+    parser.add_argument(
+        'symbol', help='Define on which Symbol to trade. E.g.: BTCUSD for Bitcoin vs Dollar. Multiple Symbols f.e. btc,eth with comma seperation.'
+    )
+    parser.add_argument(
+        'broker', help='Define on which broker to run the strategy')
+    parser.add_argument('-strategy', nargs='?', default='lotus')
+    parser.add_argument('start', nargs='?', default='')
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    'run', help='You have to say algotrader to \'run\' on symbol(s) and a broker to trade on.')
-parser.add_argument(
-    'symbol', help='Define on which Symbol to trade. E.g.: BTCUSD for Bitcoin vs Dollar. Multiple Symbols f.e. btc,eth with comma seperation.'
-)
-parser.add_argument(
-    'broker', help='Define on which broker to run the strategy')
-parser.add_argument('-strategy', nargs='?', default='lotus')
-parser.add_argument('start', nargs='?', default='')
+    args = parser.parse_args()
 
-args = parser.parse_args()
+    if args.run in ['run', 'Run', 'RUN']:
+        testnet = True
+        broker = ''
+        if args.broker in ['bitmex_testnet', 'bitmextestnet', 'Bitmextestnet', 'Bitmex-Testnet', 'bitmex-testnet']:
+            broker = 'bitmex_testnet'
+        elif args.broker in ['bitmex', 'bitmex_live', 'Bitmex', 'Bitmex-Live', 'bitmex-live']:
+            testnet = False
+            broker = 'bitmex'
+        else:
+            print('This broker is not supported.')
+            sys.exit()
 
-if args.run in ['run', 'Run', 'RUN']:
-    testnet = True
-    broker = ''
-    if args.broker in ['bitmex_testnet', 'bitmextestnet', 'Bitmextestnet', 'Bitmex-Testnet', 'bitmex-testnet']:
-        broker = 'bitmex_testnet'
-    elif args.broker in ['bitmex', 'bitmex_live', 'Bitmex', 'Bitmex-Live', 'bitmex-live']:
-        testnet = False
-        broker = 'bitmex'
+        symbols = []
+        for symbol in args.symbol.split(','):
+            if symbol in ['BTCUSD', 'Bitcoin', 'bitcoin', 'XBTUSD', 'BTC', 'btc', 'btcusd']:
+                symbols.append('XBTUSD')
+            if symbol in ['ETHUSD', 'Ethereum', 'ethereum', 'ETH', 'eth', 'ethusd']:
+                symbols.append('ETHUSD')
+        if not symbols:
+            print("No recognizable Symbol found. Supported are 'ETHUSD' and 'BTCUSD'.")
+            sys.exit()
+
+        if args.start == 'start':  # start without input prompt
+            start_settings = bot_settings(
+                symbols=symbols, broker=broker, strategy=args.strategy)
+        else:
+            start_settings = file_create_input(
+                symbols=symbols, broker=broker, strategy=args.strategy)
+            input("--Settings Saved--\nPress ENTER to strat the bot now!")
+
+        setting_file_name = '{}_{}_settings.pickle'.format(broker, args.strategy)
+
+        if args.strategy == 'lotus' and broker in ['bitmex_testnet', 'bitmex']:
+            from algo_trader.strategies import Lotus
+            from algo_trader.clients import BitmexClient
+
+            client = BitmexClient(api_key=start_settings.api_key,
+                                api_secret=start_settings.api_secret, testnet=testnet)
+            lotus = Lotus(client, symbols, start_settings,
+                        setting_file_name=setting_file_name)
+            lotus.run()
+
+        """
+        any custom made strategy has to be run with the -strategy <strategy name> argument.
+        You have to create a new strategy class in /strategies folder to run it.
+        """
     else:
-        print('This broker is not supported.')
-        sys.exit()
-
-    symbols = []
-    for symbol in args.symbol.split(','):
-        if symbol in ['BTCUSD', 'Bitcoin', 'bitcoin', 'XBTUSD', 'BTC', 'btc', 'btcusd']:
-            symbols.append('XBTUSD')
-        if symbol in ['ETHUSD', 'Ethereum', 'ethereum', 'ETH', 'eth', 'ethusd']:
-            symbols.append('ETHUSD')
-    if not symbols:
-        print("No recognizable Symbol found. Supported are 'ETHUSD' and 'BTCUSD'.")
-        sys.exit()
-
-    if args.start == 'start':  # start without input prompt
-        start_settings = bot_settings(
-            symbols=symbols, broker=broker, strategy=args.strategy)
-    else:
-        start_settings = file_create_input(
-            symbols=symbols, broker=broker, strategy=args.strategy)
-        input("--Settings Saved--\nPress ENTER to strat the bot now!")
-
-    setting_file_name = '{}_{}_settings.pickle'.format(broker, args.strategy)
-
-    if args.strategy == 'lotus' and broker in ['bitmex_testnet', 'bitmex']:
-        from algo_trader.strategies import Lotus
-        from algo_trader.clients import BitmexClient
-
-        client = BitmexClient(api_key=start_settings.api_key,
-                              api_secret=start_settings.api_secret, testnet=testnet)
-        lotus = Lotus(client, symbols, start_settings,
-                      setting_file_name=setting_file_name)
-        lotus.run()
-
-    """
-    any custom made strategy has to be run with the -strategy <strategy name> argument.
-    You have to create a new strategy class in /strategies folder to run it.
-    """
-else:
-    print("Sorry, your entries were not matched with a valid symbol and broker. You need to input e.g. 'algotrader run btcusd bitmex_testnet' to run the Algo Trader Bot.")
+        print("Sorry, your entries were not matched with a valid symbol and broker. You need to input e.g. 'algotrader run btcusd bitmex_testnet' to run the Algo Trader Bot.")
