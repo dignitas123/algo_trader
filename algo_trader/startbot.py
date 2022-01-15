@@ -4,7 +4,7 @@ import sys
 import os
 
 settings_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                             "settings")
+                             'settings')
 
 
 def run():
@@ -43,13 +43,13 @@ def file_create_input(check_exist=True, symbols=['XBTUSD'], broker='bitmex', str
         return check_settings(settings, symbols, broker, strategy)
     else:
         token = input(
-            "Submit your Strategytoken (found in your member area): ")
-        api_key = input("Submit your " + broker + " API Key (ID): ")
-        api_secret = input("Submit your " + broker + " API Secret: ")
+            'Submit your Strategytoken (found in your member area): ')
+        api_key = input('Submit your ' + broker + ' API Key (ID): ')
+        api_secret = input('Submit your ' + broker + ' API Secret: ')
         symbol_settings = {}
         for symbol in symbols:
             pos_size = input(
-                "Choose your Position Size for {} per trade in % (0.25 = 10% drawdown risk, 0.5 = 20% drawdown risk, 1.0 = 40% drawdown risk): ".format(symbol))
+                'Choose your Position Size for {} per trade in % (0.25 = 10% drawdown risk, 0.5 = 20% drawdown risk, 1.0 = 40% drawdown risk): '.format(symbol))
             pos_size = check_pos_size(pos_size)
             symbol_settings[symbol] = {
                 'position_size': pos_size, 'last_order_stop_id': '', 'last_order_stoploss_id': '', 'last_order_SL': '', 'last_order_qty': 0}
@@ -71,12 +71,12 @@ def check_pos_size(pos_size, max_position_size=10):
     try:
         float(pos_size)
     except ValueError:
-        new_size = input("Position Size is not a number,"
-                         " please type it in again: ")
+        new_size = input('Position Size is not a number,'
+                         ' please type it in again: ')
         return check_pos_size(new_size, max_position_size=max_position_size)
     if float(pos_size) > max_position_size:
-        new_size = input("Position Size is over " + str(max_position_size) +
-                         " %, please type in a lower size: ")
+        new_size = input('Position Size is over ' + str(max_position_size) +
+                         ' %, please type in a lower size: ')
         return check_pos_size(new_size, max_position_size=max_position_size)
     return pos_size
 
@@ -84,14 +84,14 @@ def check_pos_size(pos_size, max_position_size=10):
 def check_settings(settings, symbols, broker, strategy):
     print('--Check Settings--')
     while True:
-        qr = input("Start Algo Trader Bot with"
-                   "\n\tBroker: " + broker.replace('_', ' ').title() +
-                   "\n\tToken: {}..."
-                   "\n\tAPI ID: {}"
-                   "\n\tAPI Secret: ...{}"
-                   "{}"
+        qr = input('Start Algo Trader Bot with'
+                   '\n\tBroker: ' + broker.replace('_', ' ').title() +
+                   '\n\tToken: {}...'
+                   '\n\tAPI ID: {}'
+                   '\n\tAPI Secret: ...{}'
+                   '{}'
                    "\n\t\tDo you want to continue? ['y' for yes, 'n' for no, 'c' for"
-                   " change settings] "
+                   ' change settings] '
                    .format(settings.token[:4], settings.api_key, settings.api_secret[-4:], position_symbol_sizes(settings.symbols)))
         if qr == '' or qr[0].lower() not in ['y', 'n', 'c']:
             print("'y' for yes, 'n' for no or 'c' for "
@@ -103,7 +103,7 @@ def check_settings(settings, symbols, broker, strategy):
             if answer == 'y':
                 return settings
             else:
-                print("Shutting down...")
+                print('Shutting down...')
                 sys.exit()
 
 
@@ -113,6 +113,7 @@ def position_symbol_sizes(symbols):
         output += '\n\t{} Position Size: {} %'.format(
             key, symbols[key]['position_size'])
     return output
+
 
 def app():
     parser = argparse.ArgumentParser()
@@ -156,18 +157,19 @@ def app():
         else:
             start_settings = file_create_input(
                 symbols=symbols, broker=broker, strategy=args.strategy)
-            input("--Settings Saved--\nPress ENTER to strat the bot now!")
+            input('--Settings Saved--\nPress ENTER to strat the bot now!')
 
-        setting_file_name = '{}_{}_settings.pickle'.format(broker, args.strategy)
+        setting_file_name = '{}_{}_settings.pickle'.format(
+            broker, args.strategy)
 
         if args.strategy == 'lotus' and broker in ['bitmex_testnet', 'bitmex']:
             from algo_trader.strategies import Lotus
-            from algo_trader.clients import BitmexClient
+            from algo_trader.clients.bitmex.bitmex_client import BitmexClient
 
             client = BitmexClient(api_key=start_settings.api_key,
-                                api_secret=start_settings.api_secret, testnet=testnet)
+                                  api_secret=start_settings.api_secret, testnet=testnet)
             lotus = Lotus(client, symbols, start_settings,
-                        setting_file_name=setting_file_name)
+                          setting_file_name=setting_file_name)
             lotus.run()
 
         """
