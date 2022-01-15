@@ -12,3 +12,6 @@ bucket = client.client.Trade.Trade_getBucketed(symbol='XBTUSD',
                             ).result()
 
 print(bucket[0][0]['symbol'])
+
+# testnet id: Wy-golkVr1wwO2-jy8lDOzzU
+# testnet secret: fRRvX8rMh6_QkcZRANs1maqzHYnFBunit4uMr87ub2j_eREz
