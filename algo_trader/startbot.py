@@ -164,7 +164,7 @@ def app():
 
         if args.strategy == 'lotus' and broker in ['bitmex_testnet', 'bitmex']:
             from algo_trader.strategies import Lotus
-            from algo_trader.clients.bitmex.bitmex_client import BitmexClient
+            from algo_trader.clients.bitmex import BitmexClient
 
             client = BitmexClient(api_key=start_settings.api_key,
                                   api_secret=start_settings.api_secret, testnet=testnet)

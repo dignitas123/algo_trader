@@ -7,7 +7,7 @@ maintainers = ["Niclas Hummel <info@algoinvest.online>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = ">=3.6 <3.10"
 bitmex = "^0.2.2"
 binance = "^0.3"
 bravado = "^11.0.3"
