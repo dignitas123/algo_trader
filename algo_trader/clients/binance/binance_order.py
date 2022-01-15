@@ -4,129 +4,8 @@ import time
 import uuid
 import pickle
 import sys
-from binance.client import Client as binanceClient, BinanceAPIException, BinanceRequestException, NotImplementedException
-
-import datetime
-
-from bravado.exception import HTTPBadGateway, HTTPUnauthorized, HTTPBadRequest, HTTPNotFound, HTTPGatewayTimeout, HTTPServiceUnavailable
-
-
-class BinanceClient:
-    def __init__(self, api_key=None, api_secret=None, testnet=True):
-        self.client = binanceClient(
-            api_key, api_secret, {"timeout": 20}, testnet=testnet)
-        self._last_wallet_balance = ''
-        self._last_currentprice = {}
-        self.testnet = testnet
-
-    def __call__(self):
-        return self.client
-
-    def acc_balance(self, symbol):
-        if 'USDT' in symbol:
-            try:
-                return self.client.futures_account_balance()[1]['balance']
-            except (BinanceAPIException, BinanceRequestException, NotImplementedException) as e:
-                print(e.status_code)
-                print(e.message)
-        else:
-            try:
-                s_bal = symbol.replace('USD', '')  # balance to search for
-                balances = self.client.futures_coin_account_balance()
-                return next(sym for sym in balances if sym["asset"] == s_bal)['balance']
-            except (BinanceAPIException, BinanceRequestException, NotImplementedException) as e:
-                print(e.status_code)
-                print(e.message)
-
-    def get_position(self, symbol, prop):
-        '''
-
-        example return of `s_info`:
-            {'symbol': 'BTCUSDT', 'positionAmt': '0.001',
-            'entryPrice': '41694.23', 'markPrice': '41822.27000000', 'unRealizedProfit': '0.12804000',
-            'liquidationPrice': '0', 'leverage': '20', 'maxNotionalValue': '10000000', 'marginType': 'cross',
-            'isolatedMargin': '0.00000000', 'isAutoAddMargin': 'false', 'positionSide': 'BOTH',
-            'notional': '41.82227000', 'isolatedWallet': '0', 'updateTime': 1632491393073}   
-
-        '''
-        try:
-            s_info = self.client.futures_position_information(symbol=symbol)
-            return s_info[prop]
-        except (BinanceAPIException, BinanceRequestException, NotImplementedException) as e:
-            print(e.status_code)
-            print(e.message)
-
-    def get_histories(self, symbols=['BTCUSDT'], count=15, interval=30):
-        histories = {}
-        for symbol in symbols:
-            i = 0
-            while True:
-                try:
-                    histories[symbol] = self.client.get_klines(symbol=symbol, interval=str(interval)+'m', limit=count)
-                    break
-                except (BinanceAPIException, BinanceRequestException, NotImplementedException) as e:
-                    if 'expired' in str(e):
-                        print('Getting {} history failed. Expired error.'.format(
-                            symbol), flush=True)
-                    else:
-                        time.sleep(2)  # try again after 2 seconds
-                        print("Can't get history. Trying again...", e)
-                        i += 1
-                        if i > 1:
-                            print("Can't get history for 2nd time.")
-                            break
-        return histories
-
-    def get_current_price(self, symbol):
-        try:
-            price = self.client.Trade.Trade_get(symbol=symbol,
-                                                count=2,
-                                                reverse=True,
-                                                ).result()[0][0]['price']
-            self._last_currentprice[symbol] = price
-            return price
-        except (IndexError, HTTPBadRequest, HTTPGatewayTimeout, HTTPBadGateway, HTTPServiceUnavailable) as e:
-            if 'expired' in str(e):
-                print('Current price expired. Returning last price.', flush=True)
-            elif 'Service Unavailable' in str(e):
-                print('Server maintenance. Trying to reconnect in 5 Minutes...')
-                while True:
-                    time.sleep(360)
-                    current_price = self.get_current_price(symbol)
-                    if current_price:
-                        break
-            # else:
-            #     # print('API error getting current price', e, flush=True)
-            #     pass
-            return self.last_current_price(symbol)
-
-    def last_current_price(self, symbol):
-        if symbol in self._last_currentprice.keys():
-            return self._last_currentprice[symbol]
-        else:
-            time.sleep(2)
-            return self.get_current_price(symbol)
-
-    def unrealised_pnl(self, symbol):
-        return self.get_position(symbol, 'unRealizedProfit')
-
-    def open_contracts(self, symbol):
-        res = self.get_position(symbol, 'positionAmt')
-        if res != '0.000':
-            return res
-        else:
-            return 0
-
-    def current_price_position(self, symbol):
-        return self.get_position(symbol, 'markPrice')
-
-    @property
-    def is_connected(self):
-        print(self.acc_balance('BTCUSDT'))
-        if isinstance(self.acc_balance('BTCUSDT'), str):
-            return True
-        else:
-            return False
+from algo_trader.clients.binance.binance_client import BinanceClient
+from bravado.exception import HTTPBadRequest, HTTPNotFound
 
 
 class BinanceOrder(BinanceClient):
@@ -150,27 +29,27 @@ class BinanceOrder(BinanceClient):
         if self.props[symbol]['stoploss_id']:
             try:
                 res = self.client.Order.Order_getOrders(
-                    filter=json.dumps({"symbol": symbol, "open": True})).result()
+                    filter=json.dumps({'symbol': symbol, 'open': True})).result()
                 if res[0] and self.props[symbol]['stoploss_id'] in [order['clOrdID'] for order in res[0]]:
-                    print("Bot order in {} open, stoploss might be modified".format(
+                    print('Bot order in {} open, stoploss might be modified'.format(
                         symbol), flush=True)
                     self.modifiy_stop(symbol, sl)
                     self.props[symbol]['entry'] = entry
                     self.props[symbol]['open'] = True
                     time.sleep(2)
             except HTTPBadRequest as e:
-                print("Error getting orders.", e)
+                print('Error getting orders.', e)
         if self.props[symbol]['stop_id']:
             try:
                 res = self.client.client.Order.Order_getOrders(
-                    filter=json.dumps({"symbol": symbol, "open": True})).result()
+                    filter=json.dumps({'symbol': symbol, 'open': True})).result()
                 if res[0] and self.props[symbol]['stop_id'] in [order['clOrdID'] for order in res[0]]:
-                    print("Bot order in {} open, stop will be deleted.".format(
+                    print('Bot order in {} open, stop will be deleted.'.format(
                         symbol), flush=True)
                     self.stoporder_cancel(symbol)
                     time.sleep(2)
             except HTTPBadRequest as e:
-                print("Error getting orders.", e)
+                print('Error getting orders.', e)
 
     def save_open_id(self, symbol, id, stop_type='normal'):
         settings = pickle.load(open(self._settings_path, 'rb'))
@@ -184,7 +63,7 @@ class BinanceOrder(BinanceClient):
             settings.symbols[symbol]['last_order_SL'] = self.props[symbol]['SL']
             pickle.dump(settings, file=open(self._settings_path, 'wb'))
         else:
-            print("No Stop Type given.")
+            print('No Stop Type given.')
 
     def manage_entries(self, symbols):
         for symbol in symbols:
@@ -194,29 +73,29 @@ class BinanceOrder(BinanceClient):
                 if self.props[symbol]['qty'] > 0 and cp >= self.props[symbol]['entry'] and self.client.open_contracts(symbol) != 0:
                     self.props[symbol]['wait_stop'] = False
                     self.props[symbol]['open'] = True
-                    print("Long Position has been opened in {}, amending Stoploss to".format(symbol),
+                    print('Long Position has been opened in {}, amending Stoploss to'.format(symbol),
                           self.props[symbol]['SL'], flush=True)
                     self.stoploss_order(symbol)
                 elif self.props[symbol]['qty'] < 0 and cp <= self.props[symbol]['entry'] and self.client.open_contracts(symbol) != 0:
                     self.props[symbol]['wait_stop'] = False
                     self.props[symbol]['open'] = True
-                    print("Short Position has been opened in {}, amending Stoploss to".format(symbol),
+                    print('Short Position has been opened in {}, amending Stoploss to'.format(symbol),
                           self.props[symbol]['SL'], flush=True)
                     self.stoploss_order(symbol)
             elif self.props[symbol]['open']:
                 if self.props[symbol]['qty'] > 0 and cp <= self.props[symbol]['SL'] and self.client.open_contracts(symbol) == 0:
                     self.props[symbol]['open'] = False
-                    print("Long Position {} closed. {} Contracts from {} to {}. PnL in Points: {}".format(symbol,
+                    print('Long Position {} closed. {} Contracts from {} to {}. PnL in Points: {}'.format(symbol,
                                                                                                           self.props[symbol]['qty'], self.props[symbol]['entry'], self.props[symbol]['SL'], self.price_decimals(symbol, self.props[symbol]['SL']-self.props[symbol]['entry'])), flush=True)
                     self.props[symbol]['qty'] = 0
                 elif self.props[symbol]['qty'] < 0 and cp >= self.props[symbol]['SL'] and self.client.open_contracts(symbol) == 0:
                     self.props[symbol]['open'] = False
-                    print("Short Position {} closed. {} Contracts from {} to {}. PnL in Points: {}".format(symbol,
+                    print('Short Position {} closed. {} Contracts from {} to {}. PnL in Points: {}'.format(symbol,
                                                                                                            -self.props[symbol]['qty'], self.props[symbol]['entry'], self.props[symbol]['SL'], self.price_decimals(symbol, self.props[symbol]['entry']-self.props[symbol]['SL'])), flush=True)
                     self.props[symbol]['qty'] = 0
 
     def generate_id(self, symbol, _type='stop'):
-        return "{}_{}_{}_{}".format(self.magic, symbol, str(uuid.uuid4().fields[-1])[:5], _type)
+        return '{}_{}_{}_{}'.format(self.magic, symbol, str(uuid.uuid4().fields[-1])[:5], _type)
 
     def price_decimals(self, symbol, price):
         if symbol == 'XBTUSD':
@@ -262,7 +141,7 @@ class BinanceOrder(BinanceClient):
                 stopPx=self.price_decimals(symbol, self.props[symbol]['SL']), execInst=execPrice
             ).result()
         except HTTPBadRequest as e:
-            print("Error placing stoploss order.", e, flush=True)
+            print('Error placing stoploss order.', e, flush=True)
 
     def order_cancel(self, symbol, orderId):
         try:
@@ -272,7 +151,7 @@ class BinanceOrder(BinanceClient):
             self.props[symbol]['wait_stop'] = False
             return order_res
         except (HTTPBadRequest, HTTPNotFound) as e:
-            print("Error canceling order.", e, flush=True)
+            print('Error canceling order.', e, flush=True)
 
     def stoploss_cancel(self, symbol):
         self.order_cancel(symbol, self.props[symbol]['stoploss_id'])
@@ -295,7 +174,7 @@ class BinanceOrder(BinanceClient):
             self.props[symbol]['entry'] = entry
             return order_res
         except HTTPBadRequest as e:
-            print("Error placing bracket stop order in {}.".format(
+            print('Error placing bracket stop order in {}.'.format(
                 symbol), e, flush=True)
 
     def bracket_market_order(self, symbol, orderQty, sl, cp, tp=0):
@@ -309,7 +188,7 @@ class BinanceOrder(BinanceClient):
             self.props[symbol]['entry'] = cp
             return entry, stoploss
         except HTTPBadRequest as e:
-            print("Error placing bracket market order in {}.".format(
+            print('Error placing bracket market order in {}.'.format(
                 symbol), e, flush=True)
 
     def market_order(self, symbol, orderQty):
@@ -322,7 +201,7 @@ class BinanceOrder(BinanceClient):
             self.props[symbol]['wait_stop'] = False
             return order_res
         except HTTPBadRequest as e:
-            print("Error placing market order.", e, flush=True)
+            print('Error placing market order.', e, flush=True)
 
     def modifiy_stop(self, symbol, newStopLoss):
         try:
@@ -353,7 +232,7 @@ class BinanceOrder(BinanceClient):
                 self.stoploss_cancel(symbol)
                 return close
             except HTTPBadRequest as e:
-                print("Error closing order in {}.".format(symbol), e, flush=True)
+                print('Error closing order in {}.'.format(symbol), e, flush=True)
         else:
             return False
 
@@ -399,7 +278,7 @@ print(client.get_histories())
 
 '''
 {
-    'XBTUSD': 
+    'XBTUSD':
         (
             [
                 {'timestamp': datetime.datetime(2021, 9, 24, 15, 15, tzinfo=tzutc()),

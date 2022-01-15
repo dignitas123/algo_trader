@@ -1,155 +1,11 @@
 import json
 import math
-import bitmex
 import time
 import uuid
 import pickle
 import sys
 
-from bravado.exception import HTTPBadGateway, HTTPUnauthorized, HTTPBadRequest, HTTPNotFound, HTTPGatewayTimeout, HTTPServiceUnavailable, HTTPTooManyRequests, HTTPServerError
-
-
-class BitmexClient:
-    def __init__(self, api_key=None, api_secret=None, testnet=True):
-        self.client = bitmex.bitmex(
-            api_key=api_key, api_secret=api_secret, test=testnet)
-        self._last_wallet_balance = ''
-        self._last_currentprice = {}
-        self.testnet = testnet
-
-    def __call__(self):
-        return self.client
-
-    def get_margin(self, prop):
-        try:
-            wallet_balance = self.client.User.User_getMargin().result()[
-                0][str(prop)]
-            self._last_wallet_balance = wallet_balance
-            return wallet_balance
-        except (HTTPBadRequest, HTTPGatewayTimeout):
-            return self._last_wallet_balance
-
-    def get_position(self, symbol, prop):
-        position = 0
-        i = 0
-        while True:
-            try:
-                position = self.client.Position.Position_get(
-                    filter=json.dumps({'symbol': symbol})).result()[0][0][str(prop)]
-                break
-            except (IndexError, HTTPBadRequest, HTTPBadGateway) as e:
-                if 'expired' in str(e):
-                    print('Getting open contracts in {} failed. Expired error.'.format(
-                        symbol), flush=True)
-                else:
-                    time.sleep(2)  # try again after 2 seconds
-                    print("Can't get position in {}. Trying again... [Bitmex Server temporarily not reachable]".format(symbol))
-                    i += 1
-                    if i > 1:
-                        print("Can't get position in {} for 2nd time.".format(symbol))
-                        return False
-        return position
-
-    def get_histories(self, symbols=['XBTUSD'], binSize='5m', count=15):
-        histories = {}
-        for symbol in symbols:
-            i = 0
-            while True:
-                try:
-                    histories[symbol] = self.client.Trade.Trade_getBucketed(symbol=symbol,
-                                                                            binSize=binSize,
-                                                                            count=count,
-                                                                            reverse=True,
-                                                                            ).result()
-                    break
-                except HTTPBadRequest as e:
-                    if 'expired' in str(e):
-                        print('Getting {} history failed. Expired error.'.format(
-                            symbol), flush=True)
-                    else:
-                        time.sleep(2)  # try again after 2 seconds
-                        print("Can't get history. Trying again...", e)
-                        i += 1
-                        if i > 1:
-                            print("Can't get history for 2nd time.")
-                            break
-        return histories
-
-    def get_current_price(self, symbol):
-        try:
-            price = self.client.Trade.Trade_get(symbol=symbol,
-                                                count=2,
-                                                reverse=True,
-                                                ).result()[0][0]['price']
-            self._last_currentprice[symbol] = price
-            return price
-        except (IndexError, HTTPBadRequest, HTTPGatewayTimeout, HTTPBadGateway, HTTPServiceUnavailable, HTTPServerError) as e:
-            if 'expired' in str(e):
-                print('Current price expired. Returning last price.', flush=True)
-            elif 'Service Unavailable' in str(e):
-                print('Server maintenance. Trying to reconnect in 5 Minutes...')
-                while True:
-                    time.sleep(360)
-                    current_price = self.get_current_price(symbol)
-                    if current_price:
-                        break
-            # else:
-            #     # print('API error getting current price', e, flush=True)
-            #     pass
-            return self.last_current_price(symbol)
-
-    def get_current_price_candle(self, symbol):
-        try:
-            price = self.client.Trade.Trade_getBucketed(symbol=symbol,
-                                                        binSize='1m',
-                                                        count=1,
-                                                        reverse=True,
-                                                        ).result()[0][0]
-            return price
-        except (IndexError, HTTPBadRequest, HTTPBadGateway, HTTPGatewayTimeout, HTTPServiceUnavailable, HTTPTooManyRequests) as e:
-            if 'Service Unavailable' in str(e):
-                print(
-                    'Server maintenance. Trying to reconnect in 5 Minutes...', flush=True)
-                while True:
-                    time.sleep(360)
-                    current_price = self.get_current_price(symbol)
-                    if current_price:
-                        break
-            return self._last_currentprice[symbol]
-
-    def last_current_price(self, symbol):
-        if symbol in self._last_currentprice.keys():
-            return self._last_currentprice[symbol]
-        else:
-            time.sleep(2)
-            return self.get_current_price(symbol)
-
-    def unrealised_pnl(self, symbol):
-        return self.get_position(symbol, 'unrealisedPnl')
-
-    def open_contracts(self, symbol):
-        res = self.get_position(symbol, 'currentQty')
-        if res is not False:
-            return res
-        else:
-            return 0
-
-    def current_price_position(self, symbol):
-        return self.get_position(symbol, 'lastPrice')
-
-    @property
-    def is_connected(self):
-        if not self.acc_balance:
-            return False
-        else:
-            return True
-
-    @property
-    def acc_balance(self):
-        try:
-            return self.get_margin('walletBalance')
-        except HTTPUnauthorized:
-            return False
+from bravado.exception import HTTPBadRequest, HTTPNotFound
 
 
 class BitmexOrder:
@@ -182,27 +38,27 @@ class BitmexOrder:
         if self.props[symbol]['stoploss_id']:
             try:
                 res = self.client.client.Order.Order_getOrders(
-                    filter=json.dumps({"symbol": symbol, "open": True})).result()
+                    filter=json.dumps({'symbol': symbol, 'open': True})).result()
                 if res[0] and self.props[symbol]['stoploss_id'] in [order['clOrdID'] for order in res[0]]:
-                    print("Bot order in {} open, stoploss might be modified".format(
+                    print('Bot order in {} open, stoploss might be modified'.format(
                         symbol), flush=True)
                     self.modifiy_stop(symbol, sl)
                     self.props[symbol]['entry'] = entry
                     self.props[symbol]['open'] = True
                     time.sleep(2)
             except HTTPBadRequest as e:
-                print("Error getting orders.", e)
+                print('Error getting orders.', e)
         if self.props[symbol]['stop_id']:
             try:
                 res = self.client.client.Order.Order_getOrders(
-                    filter=json.dumps({"symbol": symbol, "open": True})).result()
+                    filter=json.dumps({'symbol': symbol, 'open': True})).result()
                 if res[0] and self.props[symbol]['stop_id'] in [order['clOrdID'] for order in res[0]]:
-                    print("Bot order in {} open, stop will be deleted.".format(
+                    print('Bot order in {} open, stop will be deleted.'.format(
                         symbol), flush=True)
                     self.stoporder_cancel(symbol)
                     time.sleep(2)
             except HTTPBadRequest as e:
-                print("Error getting orders.", e)
+                print('Error getting orders.', e)
 
     def save_open_id(self, symbol, id, stop_type='normal'):
         settings = pickle.load(open(self._settings_path, 'rb'))
@@ -217,12 +73,12 @@ class BitmexOrder:
             settings.symbols[symbol]['last_order_SL'] = self.props[symbol]['SL']
             pickle.dump(settings, file=open(self._settings_path, 'wb'))
         else:
-            print("No Stop Type given.")
+            print('No Stop Type given.')
 
     def set_position_open(self, symbol, dir):
         self.props[symbol]['wait_stop'] = False
         self.props[symbol]['open'] = True
-        print("{} Position has been opened in {}, amending Stoploss to".format(dir, symbol),
+        print('{} Position has been opened in {}, amending Stoploss to'.format(dir, symbol),
               self.props[symbol]['SL'], flush=True)
         self.stoploss_order(symbol)
         self.calculate_between_profits(symbol)
@@ -240,14 +96,14 @@ class BitmexOrder:
         pnl_points = self.price_decimals(
             symbol, self.props[symbol]['SL']-self.props[symbol]['entry'])
         qty = self.props[symbol]['qty']
-        if dir == "Short":
+        if dir == 'Short':
             pnl_points = -pnl_points
             qty = -qty
         if currentPrice:
             exitPrice = self.client.get_current_price(symbol)
         else:
             exitPrice = self.props[symbol]['SL']
-        print("{} Position {} closed. {} Contracts from {} to {}. PnL in Points: {}".format(symbol,
+        print('{} Position {} closed. {} Contracts from {} to {}. PnL in Points: {}'.format(symbol,
                                                                                             dir, qty,
                                                                                             self.props[symbol]['entry'],
                                                                                             exitPrice,
@@ -263,8 +119,8 @@ class BitmexOrder:
             # exit account balance - current account balance
             acc_balance_diff = current_acc_balance - \
                 between_profs - self.entry_acc_balance[symbol]
-            print("current_acc_balance", current_acc_balance, "between_profs", between_profs,
-                  "self.entry_acc_balance[symbol]", self.entry_acc_balance[symbol])
+            print('current_acc_balance', current_acc_balance, 'between_profs', between_profs,
+                  'self.entry_acc_balance[symbol]', self.entry_acc_balance[symbol])
 
             # in acc balance difference
             self.between_profits[symbol] += acc_balance_diff
@@ -277,9 +133,9 @@ class BitmexOrder:
             expected_gain = pnl_rr * acc_pos_size
 
             # slippage is real acc balance change relative - executed pnl percent
-            print("expected_gain", expected_gain,
-                  "real_gain", real_gain)
-            print("Slippage: {}%".format(
+            print('expected_gain', expected_gain,
+                  'real_gain', real_gain)
+            print('Slippage: {}%'.format(
                 round((real_gain - expected_gain) / abs(expected_gain) * 100, 2)), flush=True)
         self.props[symbol]['qty'] = 0
 
@@ -330,7 +186,7 @@ class BitmexOrder:
                 self.manage_entries(self._symbols, candlePrice=candlePrice)
 
     def generate_id(self, symbol, _type='stop'):
-        return "{}_{}_{}_{}".format(self.magic, symbol, str(uuid.uuid4().fields[-1])[:5], _type)
+        return '{}_{}_{}_{}'.format(self.magic, symbol, str(uuid.uuid4().fields[-1])[:5], _type)
 
     def price_decimals(self, symbol, price):
         if symbol == 'XBTUSD':
@@ -378,7 +234,7 @@ class BitmexOrder:
                 stopPx=self.price_decimals(symbol, self.props[symbol]['SL']), execInst=execPrice
             ).result()
         except HTTPBadRequest as e:
-            print("Error placing stoploss order.", e, flush=True)
+            print('Error placing stoploss order.', e, flush=True)
 
     def order_cancel(self, symbol, orderId):
         try:
@@ -389,7 +245,7 @@ class BitmexOrder:
             self.props[symbol]['qty'] = 0
             return order_res
         except (HTTPBadRequest, HTTPNotFound) as e:
-            print("Error canceling order.", e, flush=True)
+            print('Error canceling order.', e, flush=True)
 
     def stoploss_cancel(self, symbol):
         self.order_cancel(symbol, self.props[symbol]['stoploss_id'])
@@ -416,7 +272,7 @@ class BitmexOrder:
             self.props[symbol]['entry'] = entry
             return order_res
         except HTTPBadRequest as e:
-            print("Error placing bracket stop order in {}.".format(
+            print('Error placing bracket stop order in {}.'.format(
                 symbol), e, flush=True)
 
     def bracket_market_order(self, symbol, orderQty, sl, cp, tp=0):
@@ -431,7 +287,7 @@ class BitmexOrder:
             self.props[symbol]['entry'] = cp
             return entry, stoploss
         except HTTPBadRequest as e:
-            print("Error placing bracket market order in {}.".format(
+            print('Error placing bracket market order in {}.'.format(
                 symbol), e, flush=True)
 
     def market_order(self, symbol, orderQty):
@@ -444,7 +300,7 @@ class BitmexOrder:
             self.props[symbol]['wait_stop'] = False
             return order_res
         except HTTPBadRequest as e:
-            print("Error placing market order.", e, flush=True)
+            print('Error placing market order.', e, flush=True)
 
     def modifiy_stop(self, symbol, newStopLoss):
         try:
@@ -482,6 +338,6 @@ class BitmexOrder:
                 self.stoploss_cancel(symbol)
                 return close
             except HTTPBadRequest as e:
-                print("Error closing order in {}.".format(symbol), e, flush=True)
+                print('Error closing order in {}.'.format(symbol), e, flush=True)
         else:
             return False

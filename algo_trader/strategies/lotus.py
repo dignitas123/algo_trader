@@ -3,7 +3,7 @@ import random
 import datetime
 import time
 from dateutil import parser
-from algo_trader.clients import BitmexOrder
+from algo_trader.clients.bitmex.bitmex_order import BitmexOrder
 from algo_trader.settings import TESTNET_LOTUS_LINK, LIVE_LOTUS_LINK
 import requests
 import os
@@ -37,14 +37,15 @@ class Lotus:
             self._last_sl[symbol] = ''
 
         if not self.client.is_connected:
-            print("Invalid API ID or API Secret, please restart and provide the right keys", flush=True)
+            print(
+                'Invalid API ID or API Secret, please restart and provide the right keys', flush=True)
             sys.exit()
 
     # helper function
     def ceil_dt(self, dt, delta):
         return dt + (datetime.datetime.min - dt) % delta
 
-    def signal_handler(self, signal, frame):
+    def signal_handler(self):
         print('Doing things before exit...')
         for symbol in self.symbols:
             if self.order.props[symbol]['wait_stop']:
@@ -112,11 +113,11 @@ class Lotus:
 
     def manage_open_stop_orders(self, symbol):
         if self.order.props[symbol]['wait_stop']:
-            print("Cancel old order {} first.".format(symbol))
+            print('Cancel old order {} first.'.format(symbol))
             self.order.stoporder_cancel(symbol)
             time.sleep(3)
         elif self.order.props[symbol]['open']:
-            print("Manage open stop orders, order open. Trying to close.", flush=True)
+            print('Manage open stop orders, order open. Trying to close.', flush=True)
             self.order.close(symbol, -self.client.open_contracts(symbol))
             time.sleep(3)
 
@@ -156,7 +157,7 @@ class Lotus:
                                         time.sleep(2)
                                         contracts = self.order.calc_pos_size(
                                             symbol, sl_new_dist)
-                                        print("Open market order long into open Signal. {} {} Contracts, Stoploss: {}".format(
+                                        print('Open market order long into open Signal. {} {} Contracts, Stoploss: {}'.format(
                                             symbol, contracts, stoploss), flush=True)
                                         self.order.bracket_market_order(
                                             symbol, contracts, stoploss, cp)
@@ -183,7 +184,7 @@ class Lotus:
                                         time.sleep(2)
                                         contracts = self.order.calc_pos_size(
                                             symbol, sl_new_dist)
-                                        print("Open market order short into open Signal. {} {} Contracts, Stoploss: {}".format(
+                                        print('Open market order short into open Signal. {} {} Contracts, Stoploss: {}'.format(
                                             symbol, contracts, stoploss), flush=True)
                                         self.order.bracket_market_order(
                                             symbol, -contracts, stoploss, cp)
@@ -192,12 +193,12 @@ class Lotus:
                         contracts = self.order.calc_pos_size(
                             symbol, abs(entry - stoploss))
                         if signal == 2:
-                            print("Open bracket stop order long. {} {} Contracts, Entry: {}, Stoploss: {}".format(
+                            print('Open bracket stop order long. {} {} Contracts, Entry: {}, Stoploss: {}'.format(
                                 symbol, contracts, entry, stoploss), flush=True)
                             self.order.bracket_stop_order(
                                 symbol, contracts, entry, stoploss)
                         else:
-                            print("Open bracket stop order short. {} {} Contracts, Entry: {}, Stoploss: {}".format(
+                            print('Open bracket stop order short. {} {} Contracts, Entry: {}, Stoploss: {}'.format(
                                 symbol, contracts, entry, stoploss), flush=True)
                             self.order.bracket_stop_order(
                                 symbol, -contracts, entry, stoploss)
@@ -206,7 +207,7 @@ class Lotus:
                             self.order.close(symbol)
             elif signal != 0:
                 self.manage_open_stop_orders(symbol)
-                print("This position update in {} is only for premium members. Next update: {}".format(symbol,
+                print('This position update in {} is only for premium members. Next update: {}'.format(symbol,
                                                                                                        self.ceil_dt(datetime.datetime.now(), datetime.timedelta(minutes=30))), flush=True)
 
     def run(self):
@@ -216,12 +217,12 @@ class Lotus:
         while True:
             signal = self.get_api_signal()
             if not signal:
-                print("Trying again in 1 Minute.", flush=True)
+                print('Trying again in 1 Minute.', flush=True)
                 time.sleep(60)
             else:
                 self.process_signals(signal, start=True)
                 print(
-                    "BOT IS RUNNING... **(ignore potential bravado.core warning)**", flush=True)
+                    'BOT IS RUNNING... **(ignore potential bravado.core warning)**', flush=True)
                 break
         while True:
             time.sleep(10)
