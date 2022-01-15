@@ -1,4 +1,4 @@
-from algo_trader.clients.bitmex.bitmex_client import BitmexClient
+from algo_trader.clients.bitmex import BitmexClient
 
 test_id = 'Wy-golkVr1wwO2-jy8lDOzzU'
 test_secret = 'fRRvX8rMh6_QkcZRANs1maqzHYnFBunit4uMr87ub2j_eREz'
