@@ -3,7 +3,7 @@
 # from algo_trader.clients import BinanceOrder
 
 # class TestStringMethods(unittest.TestCase):
-    
+
 #     def test_is
 
 
