@@ -3,8 +3,8 @@ from algo_trader.clients import BitmexClient
 client = BitmexClient(api_key='',
                       api_secret='', testnet=False)
 
-_symbols = ["XBTUSD", "ETHUSD"]
-symbol = "XBTUSD"
+_symbols = ['XBTUSD', 'ETHUSD']
+symbol = 'XBTUSD'
 
 entry_acc_balance = {}
 between_profits = {}
@@ -32,7 +32,7 @@ for sym in _symbols:
 acc_balance_diff = entry_acc_balance[symbol] - \
     current_acc_balance + between_profs
 
-print("current_acc_balance", current_acc_balance)
+print('current_acc_balance', current_acc_balance)
 
 # in acc balance difference
 between_profits[symbol] += acc_balance_diff
@@ -41,20 +41,20 @@ initial_risk_points = abs(60322.5 - 60443.5)
 pnl_points = 62014 - 60443.5
 pnl_rr = pnl_points / initial_risk_points
 
-print("initial_risk_points", initial_risk_points)
-print("pnl_points", pnl_points)
-print("pnl_rr", pnl_rr)
+print('initial_risk_points', initial_risk_points)
+print('pnl_points', pnl_points)
+print('pnl_rr', pnl_rr)
 
 pnl_rel_expected = entry_acc_balance[symbol] * (
     1 + (pnl_rr * acc_pos_size))
 pnl_rel_real = entry_acc_balance[symbol] * (
     1 + (acc_balance_diff / entry_acc_balance[symbol]))
 
-print("pnl_rel_expected", pnl_rel_expected)
-print("pnl_rel_real", pnl_rel_real)
+print('pnl_rel_expected', pnl_rel_expected)
+print('pnl_rel_real', pnl_rel_real)
 
 # slippage is real acc balance change relative - executed pnl percent
-print("Slippage: {}%".format(
+print('Slippage: {}%'.format(
     round((pnl_rel_real - pnl_rel_expected) * 100, 2)), flush=True)
 
 entry_acc_balance[symbol] = current_acc_balance

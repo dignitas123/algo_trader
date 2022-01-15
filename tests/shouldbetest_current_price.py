@@ -6,10 +6,10 @@ client = BitmexClient(api_key='',
 # print(client.get_current_price('XBTUSD'))
 
 bucket = client.client.Trade.Trade_getBucketed(symbol='XBTUSD',
-                            binSize='1m',
-                            count=1,
-                            reverse=True,
-                            ).result()
+                                               binSize='1m',
+                                               count=1,
+                                               reverse=True,
+                                               ).result()
 
 print(bucket[0][0]['symbol'])
 
