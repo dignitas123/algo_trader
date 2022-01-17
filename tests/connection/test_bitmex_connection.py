@@ -5,8 +5,8 @@ test_secret = 'fRRvX8rMh6_QkcZRANs1maqzHYnFBunit4uMr87ub2j_eREz'
 client = BitmexClient(api_key=test_id,
                       api_secret=test_secret)
 
-# tests if bitmex client cann connect to testnet
-
 
 def test_clientConnection():
+    '''tests if bitmex client cann connect to testnet'''
+
     assert client.is_connected
