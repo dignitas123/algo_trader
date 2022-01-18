@@ -173,7 +173,7 @@ def app():
             lotus.run()
 
         """
-        any custom made strategy has to be run with the -strategy <strategy name> argument.
+        Any custom made strategy has to be run with the -strategy <strategy name> argument.
         You have to create a new strategy class in /strategies folder to run it.
         """
     else:

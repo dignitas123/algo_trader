@@ -1,22 +1,26 @@
 import unittest
-from unittest.mock import PropertyMock, patch
 import os
 
 from algo_trader.clients.bitmex import BitmexClient, BitmexOrder
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, PropertyMock
 from tests.unit.mock.mockBrokerSettings import mockSettings
-mockSettingsPath = os.path.dirname(
-    os.path.abspath(__file__))  # current directory
+
+mockSetting_file_name = '{}_{}_settings.pickle'.format(
+    'bitmex_testnet', 'lotus')
+
+mockSettingsPath = os.path.abspath(os.path.join(os.path.dirname(
+    os.path.abspath(__file__)), 'settings', mockSetting_file_name))
 
 
 class BitmexOrderTestCase(unittest.TestCase):
-    """Test BitmexOrder Class Functions with Client Mock Data"""
+    """Tests BitmexOrder Class Functions with Client Mock Data"""
 
     def setUp(self):
         self.mockClient = BitmexClient()
         type(self.mockClient).acc_balance = PropertyMock(
             return_value=100000000)
+
         self.mockOrder = BitmexOrder(
             ['ETHUSD', 'XBTUSD'],
             self.mockClient,
@@ -24,15 +28,18 @@ class BitmexOrderTestCase(unittest.TestCase):
             mockSettingsPath
         )
 
+    def test_check_open_bot_order(self):
+        pass
+
     def test_calc_pos_size(self):
-        self.mockClient.client.last_current_price = MagicMock(
+        self.mockOrder.client.last_current_price = MagicMock(
             return_value=50000)
         self.mockOrder.settings.symbols = {'XBTUSD': {'position_size': 1.0}}
         pos_size = self.mockOrder.calc_pos_size('XBTUSD', 200)
-        self.assertEqual(pos_size, 91700)
+        self.assertEqual(pos_size, 125000)
         self.mockOrder.settings.symbols = {'XBTUSD': {'position_size': 0.5}}
         pos_size = self.mockOrder.calc_pos_size('XBTUSD', 200)
-        self.assertEqual(pos_size, 45900)
+        self.assertEqual(pos_size, 62500)
 
         self.mockClient.client.last_current_price = MagicMock(
             return_value=3000)

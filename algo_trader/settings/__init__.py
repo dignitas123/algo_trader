@@ -1,1 +1,1 @@
-from algo_trader.settings.api_links import TESTNET_LOTUS_LINK, LIVE_LOTUS_LINK
+from algo_trader.settings.api_links import *

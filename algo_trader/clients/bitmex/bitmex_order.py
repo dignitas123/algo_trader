@@ -13,6 +13,7 @@ class BitmexOrder:
         self.client = client
         self.settings = settings
         self._settings_path = settings_path
+
         self.magic = magic
         self._symbols = symbols
 

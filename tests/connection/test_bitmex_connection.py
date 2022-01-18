@@ -7,6 +7,6 @@ client = BitmexClient(api_key=test_id,
 
 
 def test_clientConnection():
-    '''tests if bitmex client cann connect to testnet'''
+    '''Tests if bitmex client can connect to testnet'''
 
     assert client.is_connected
