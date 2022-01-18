@@ -3,7 +3,7 @@ import random
 import datetime
 import time
 from dateutil import parser
-from algo_trader.clients.bitmex.bitmex_order import BitmexOrder
+from algo_trader.clients.bitmex import BitmexOrder
 from algo_trader.settings import TESTNET_LOTUS_LINK, LIVE_LOTUS_LINK
 import requests
 import os

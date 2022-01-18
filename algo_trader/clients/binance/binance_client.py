@@ -89,9 +89,6 @@ class BinanceClient:
                     current_price = self.get_current_price(symbol)
                     if current_price:
                         break
-            # else:
-            #     # print('API error getting current price', e, flush=True)
-            #     pass
             return self.last_current_price(symbol)
 
     def last_current_price(self, symbol):
