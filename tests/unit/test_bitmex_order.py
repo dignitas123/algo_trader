@@ -41,7 +41,7 @@ class BitmexOrderTestCase(unittest.TestCase):
         pos_size = self.mockOrder.calc_pos_size('XBTUSD', 200)
         self.assertEqual(pos_size, 62500)
 
-        self.mockClient.client.last_current_price = MagicMock(
+        self.mockOrder.client.last_current_price = MagicMock(
             return_value=3000)
         self.mockOrder.settings.symbols = {'ETHUSD': {'position_size': 1.0}}
         pos_size = self.mockOrder.calc_pos_size('ETHUSD', 50)
