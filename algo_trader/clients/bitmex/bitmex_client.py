@@ -2,7 +2,7 @@ import json
 import bitmex
 import time
 
-from bravado.exception import HTTPBadGateway, HTTPUnauthorized, HTTPBadRequest, HTTPGatewayTimeout, HTTPServiceUnavailable, HTTPTooManyRequests, HTTPServerError
+from bravado.exception import HTTPBadGateway, HTTPUnauthorized, HTTPBadRequest, HTTPGatewayTimeout, HTTPServiceUnavailable, HTTPTooManyRequests, HTTPServerError, HTTPServerError, BravadoConnectionError, BravadoTimeoutError
 
 
 class BitmexClient:
@@ -33,7 +33,7 @@ class BitmexClient:
                 position = self.client.Position.Position_get(
                     filter=json.dumps({'symbol': symbol})).result()[0][0][str(prop)]
                 break
-            except (IndexError, HTTPBadRequest, HTTPBadGateway) as e:
+            except (IndexError, HTTPBadRequest, HTTPBadGateway, HTTPServerError, BravadoConnectionError, BravadoTimeoutError) as e:
                 if 'expired' in str(e):
                     print('Getting open contracts in {} failed. Expired error.'.format(
                         symbol), flush=True)
