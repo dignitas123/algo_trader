@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "algo_trader"
-version = "3.2.1"
+version = "3.2.2"
 description = "\"Trade execution engine to process API data and transmit orders to Bitmex and other brokers.\""
 authors = ["Niclas Hummel <info@algoinvest.online>"]
 maintainers = ["Niclas Hummel <info@algoinvest.online>"]
@@ -11,13 +11,13 @@ python = ">=3.6 <3.10"
 bitmex = "^0.2.2"
 binance = "^0.3"
 bravado = "^11.0.3"
-unittest = "^0.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
 pre-commit = "^2.16.0"
 pylint = "^2.12.2"
 autopep8 = "^1.6.0"
+unittest = "^0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
