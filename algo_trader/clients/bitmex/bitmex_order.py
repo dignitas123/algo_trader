@@ -82,7 +82,8 @@ class BitmexOrder:
         print('{} Position has been opened in {}, amending Stoploss to'.format(dir, symbol),
               self.props[symbol]['SL'], flush=True)
         self.stoploss_order(symbol)
-        self.calculate_between_profits(symbol)
+        if self.show_slippage:
+            self.calculate_between_profits(symbol)
 
     def calculate_between_profits(self, symbol):
         between_profs = .0
@@ -136,8 +137,10 @@ class BitmexOrder:
             # slippage is real acc balance change relative - executed pnl percent
             print('expected_gain', expected_gain,
                   'real_gain', real_gain)
-            print('Slippage: {}%'.format(
-                round((real_gain - expected_gain) / abs(expected_gain) * 100, 2)), flush=True)
+            lost_percent = round((real_gain - expected_gain))
+            print('Slippage Loss: {}%'.format(lost_percent), flush=True)
+            print('Slippage/PnL: {}%'.format(
+                round(lost_percent / abs(expected_gain) * 100, 2)), flush=True)
         self.props[symbol]['qty'] = 0
 
     def has_position_opened(self, symbol, cp, candlePrice):
