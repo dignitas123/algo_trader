@@ -67,8 +67,9 @@ class Lotus:
             return requests.get(self._api_endpoint, params=auth).json()
         except ValueError:
             print("Can't get signal on endpoint {} with token {}."
-                  "It could be that you are timed out because you try to access with multiple IP's.\nIn this case wait 40 minutes to be able to access again.\(Don't need to restart)".format(
+                  "It could be that you are timed out because you try to access with multiple IP's.\nIn this case wait 30 minutes to be able to access again.\(Don't need to restart)".format(
                       self._api_endpoint, self.settings.token))
+            time.sleep(180)
             return False
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, gaierror):
             time.sleep(30)
