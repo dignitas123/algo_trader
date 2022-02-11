@@ -69,7 +69,7 @@ class BinanceOrder(BinanceClient):
         for symbol in symbols:
             cp = self.client.get_current_price(symbol)
             if self.props[symbol]['wait_stop']:
-                time.sleep(0.5)
+                time.sleep(3)
                 if self.props[symbol]['qty'] > 0 and cp >= self.props[symbol]['entry'] and self.client.open_contracts(symbol) != 0:
                     self.props[symbol]['wait_stop'] = False
                     self.props[symbol]['open'] = True
