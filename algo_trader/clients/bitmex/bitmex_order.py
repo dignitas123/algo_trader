@@ -173,7 +173,7 @@ class BitmexOrder:
                 cp = self.client.get_current_price(symbol)
             else:
                 cp = ''
-            time.sleep(0.5)
+            time.sleep(1.5)
             if self.props[symbol]['wait_stop']:
                 self.has_position_opened(symbol, cp, candlePrice)
             elif self.props[symbol]['open']:
@@ -261,7 +261,7 @@ class BitmexOrder:
         try:
             if self.props[symbol]['qty'] != 0:
                 self.close(symbol)
-                time.sleep(1)
+                time.sleep(1.5)
             self.props[symbol]['stop_id'] = self.generate_id(symbol)
             order_res = self.client.client.Order.Order_new(
                 symbol=symbol, ordType='Stop', clOrdID=self.props[symbol]['stop_id'], orderQty=orderQty,
@@ -332,7 +332,7 @@ class BitmexOrder:
                 close = self.client.client.Order.Order_new(
                     symbol=symbol, ordType='Market', execInst='Close', orderQty=qty
                 ).result()
-                time.sleep(1)  # wait before making new API call
+                time.sleep(1.5)  # wait before making new API call
                 if self.props[symbol]['qty'] > 0:
                     self.set_position_closed(
                         symbol, 'Long', currentPrice=True)

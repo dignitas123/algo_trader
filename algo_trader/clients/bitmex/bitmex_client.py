@@ -38,13 +38,13 @@ class BitmexClient:
                     print('Getting open contracts in {} failed. Expired error.'.format(
                         symbol), flush=True)
                 else:
-                    time.sleep(2)  # try again after 2 seconds
                     print(
-                        "Can't get position in {}. Trying again... [Bitmex Server temporarily not reachable]".format(symbol))
-                    i += 1
-                    if i > 1:
-                        print("Can't get position in {} for 2nd time.".format(symbol))
-                        return False
+                        "Can't get position in {}.".format(symbol))
+            time.sleep(2)  # try again after 2 seconds
+            i += 1
+            if i > 1:
+                print("Can't get position in {} for 2nd time.".format(symbol))
+                return False
         return position
 
     def get_histories(self, symbols=['XBTUSD'], binSize='5m', count=15):
@@ -73,27 +73,35 @@ class BitmexClient:
         return histories
 
     def get_current_price(self, symbol):
-        try:
-            price = self.client.Trade.Trade_get(symbol=symbol,
-                                                count=2,
-                                                reverse=True,
-                                                ).result()[0][0]['price']
-            self._last_currentprice[symbol] = price
-            return price
-        except (IndexError, HTTPBadRequest, HTTPGatewayTimeout, HTTPBadGateway, HTTPServiceUnavailable, HTTPServerError) as e:
-            if 'expired' in str(e):
-                print('Current price expired. Returning last price.', flush=True)
-            elif 'Service Unavailable' in str(e):
-                print('Server maintenance. Trying to reconnect in 5 Minutes...')
-                while True:
-                    time.sleep(360)
-                    current_price = self.get_current_price(symbol)
-                    if current_price:
-                        break
-            # else:
-            #     # print('API error getting current price', e, flush=True)
-            #     pass
-            return self.last_current_price(symbol)
+        price = 0
+        i = 0
+        while True:
+            try:
+                price = self.client.Trade.Trade_get(symbol=symbol,
+                                                    count=2,
+                                                    reverse=True,
+                                                    ).result()[0][0]['price']
+                self._last_currentprice[symbol] = price
+                break
+            except (IndexError, HTTPBadRequest, HTTPGatewayTimeout, HTTPBadGateway, HTTPServiceUnavailable, HTTPServerError, BravadoConnectionError, BravadoTimeoutError) as e:
+                if 'expired' in str(e):
+                    print('Current price expired. Trying again...', flush=True)
+                    time.sleep(15)
+                elif 'Service Unavailable' in str(e):
+                    print('Server maintenance. Trying to reconnect in 5 Minutes...')
+                    while True:
+                        time.sleep(360)
+                        current_price = self.get_current_price(symbol)
+                        if current_price:
+                            return current_price
+                else:
+                    print(
+                        "Can't get current price in {}. Trying again in 30 seconds...".format(symbol))
+                    time.sleep(30)
+            i += 1
+            if i > 1:
+                return self.last_current_price(symbol)
+        return price
 
     def get_current_price_candle(self, symbol):
         try:
@@ -118,7 +126,7 @@ class BitmexClient:
         if symbol in self._last_currentprice.keys():
             return self._last_currentprice[symbol]
         else:
-            time.sleep(2)
+            time.sleep(30)
             return self.get_current_price(symbol)
 
     def unrealised_pnl(self, symbol):
